@@ -183,12 +183,16 @@ app.post("/api/users", async (req, res) => {
     console.log(err);
 
     if (err.code === 11000) {
-      return res.status(409).json({ message: "username or email already taken" });
+      return res
+        .status(409)
+        .json({ message: "username or email already taken" });
     }
 
     return res.status(500).json({ message: "server error" });
   }
 });
+
+app.post("/api/groups", async (req, res) => {});
 
 const PORT = process.env.SERVER_PORT;
 app.listen(PORT, () => {
