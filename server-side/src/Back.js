@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const { UserSchema } = require("./Schemas/UserSchema");
 
 const app = express();
 app.use(cors());
@@ -12,10 +13,7 @@ mongoose.connect(process.env.MONGODB_URI, {
   useUnifiedTopology: true,
 });
 
-const userSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-});
+const userSchema = new mongoose.Schema(UserSchema);
 
 const User = mongoose.model("User", userSchema);
 
