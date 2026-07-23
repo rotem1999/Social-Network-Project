@@ -508,6 +508,8 @@ app.post("/api/posts", async (req, res) => {
           content: data.content,
           author: caller._id,
           group: group._id,
+          media: data.media || "",
+          mediaType: data.mediaType || "",
         });
         await newPost.save();
 
