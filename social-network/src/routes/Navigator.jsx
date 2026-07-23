@@ -9,6 +9,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import Feed from "@/views/Feed";
 import AppLayout from "@/components/AppLayout";
 import Account from "@/views/Account";
+import Inbox from "@/views/Inbox";
 
 function Navigator() {
   const [mounted, setMounted] = useState(false);

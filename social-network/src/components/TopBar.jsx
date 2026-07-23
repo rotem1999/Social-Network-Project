@@ -9,6 +9,10 @@ const TopBar = ({ onMenu }) => {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    const query = term.trim();
+    if (!query) return;
+
+    navigate("/search?q=" + encodeURIComponent(query));
   };
 
   return (
