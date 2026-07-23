@@ -32,7 +32,7 @@ const Login = () => {
         data: { username: username.trim(), password: password.trim() },
       });
 
-      login(res.data.token, res.data.user);
+      await login(res.data.token, res.data.user, res.data.firebaseToken);
 
       // return to previous page or navigate to feed page
       const redirectTo = location.state?.from?.pathname || "/";

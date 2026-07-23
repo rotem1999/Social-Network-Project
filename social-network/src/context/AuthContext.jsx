@@ -2,6 +2,8 @@
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { USERS_URL } from "@/lib/Api";
+import { signInWithCustomToken, signOut } from "firebase/auth";
+import { auth } from "@/lib/Firebase";
 
 const TOKEN_KEY = "token";
 const AuthContext = createContext(null);
@@ -45,18 +47,30 @@ export function AuthProvider({ children }) {
       });
   }, []);
 
-  function login(newToken, newUser) {
+  async function login(newToken, newUser, firebaseToken) {
     localStorage.setItem(TOKEN_KEY, newToken);
     axios.defaults.headers.common.Authorization = "Bearer " + newToken;
     setToken(newToken);
     setUser(newUser);
+    if (firebaseToken) {
+      try {
+        await signInWithCustomToken(auth, firebaseToken);
+      } catch (e) {
+        console.error("firebase sign-in failed", e);
+      }
+    }
   }
 
-  function logout() {
+  async function logout() {
     localStorage.removeItem(TOKEN_KEY);
     delete axios.defaults.headers.common.Authorization;
     setToken(null);
     setUser(null);
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error("firebase sign-out failed", e);
+    }
   }
 
   const value = useMemo(
