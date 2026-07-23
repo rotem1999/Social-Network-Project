@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { USERS_URL } from "@/lib/api";
+import { USERS_URL } from "@/lib/Api";
 
 const TOKEN_KEY = "token";
 const AuthContext = createContext(null);

@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
 import PasswordInput from "@/components/PasswordInput";
-import { USERS_URL } from "@/lib/api";
+import { USERS_URL } from "@/lib/Api";
 
 const EMPTY = {
   firstName: "",

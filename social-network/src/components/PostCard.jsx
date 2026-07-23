@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
-import { POSTS_URL } from "@/lib/api";
+import { POSTS_URL } from "@/lib/Api";
 
 const timeAgo = (date) => {
   const minutes = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
@@ -63,6 +63,21 @@ const PostCard = ({ post, onDeleted }) => {
       </div>
 
       <h2 className="text-lg font-semibold">{post.title}</h2>
+
+      {post.media && post.mediaType === "video" && (
+        <video
+          src={post.media}
+          controls
+          className="mt-2 w-full rounded-lg border"
+        />
+      )}
+      {post.media && post.mediaType === "image" && (
+        <img
+          src={post.media}
+          controls
+          className="mt-2 w-full rounded-lg border object-cover"
+        />
+      )}
       <p className="mt-1 whitespace-pre-wrap text-sm text-gray-800">
         {post.content}
       </p>

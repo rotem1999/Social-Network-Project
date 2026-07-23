@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { useState, useEffect } from "react";
-import { POSTS_URL } from "@/lib/api";
+import { POSTS_URL } from "@/lib/Api";
 import PostCard from "@/components/PostCard";
 
 const Feed = () => {

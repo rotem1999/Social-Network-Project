@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import PasswordInput from "@/components/PasswordInput";
 import axios from "axios";
-import { USERS_URL } from "@/lib/api";
+import { USERS_URL } from "@/lib/Api";
 
 const Login = () => {
   const { login } = useAuth();
