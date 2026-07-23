@@ -1,5 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const admin = require("firebase-admin");
+const serviceAccount = require("../social-network-prj-firebase.json");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { UserSchema } = require("./Schemas/UserSchema");
@@ -13,7 +15,11 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+// initialize mongoose
 mongoose.connect(process.env.MONGODB_URI);
+
+// initialize firebase
+admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
 const userSchema = new mongoose.Schema(UserSchema);
 const groupSchema = new mongoose.Schema(GroupSchema);
@@ -73,6 +79,10 @@ app.post("/api/users", async (req, res) => {
             .json({ message: "wrong username or password" });
         }
 
+        const firebaseToken = await admin
+          .auth()
+          .createCustomToken(String(user._id));
+
         const token = jwt.sign(
           { userId: user._id, username: user.username },
           process.env.JWT_SECRET,
@@ -84,6 +94,7 @@ app.post("/api/users", async (req, res) => {
         return res.json({
           message: "Login successful",
           token,
+          firebaseToken,
           user: {
             id: user._id,
             firstName: user.firstName,

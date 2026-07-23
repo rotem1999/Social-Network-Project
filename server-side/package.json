@@ -4,6 +4,7 @@
     "body-parser": "^2.3.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "firebase-admin": "^14.2.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.4"
   },
@@ -11,6 +12,8 @@
     "start": "node --env-file=.env ./src/Back.js"
   },
   "allowScripts": {
-    "bcrypt@6.0.0": true
+    "bcrypt@6.0.0": true,
+    "@firebase/util@1.15.1": true,
+    "protobufjs@7.6.5": true
   }
 }
