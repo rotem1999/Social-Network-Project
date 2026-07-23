@@ -2,6 +2,8 @@
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import PasswordInput from "@/components/PasswordInput";
+
 const USERS_URL =
   (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000") + "/api/users";
 
@@ -20,7 +22,7 @@ const Login = () => {
     setError(e);
 
     if (!username.trim() || !password.trim()) {
-      setError("Username and password are requried");
+      setError("Username and password are required");
       return;
     }
 
@@ -62,9 +64,7 @@ const Login = () => {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
-        <input
-          className="w-full rounded border p-2"
-          placeholder="Password"
+        <PasswordInput
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />

@@ -3,6 +3,8 @@
 import { useAuth } from "@/context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import axios from "axios";
+import PasswordInput from "@/components/PasswordInput";
 
 const USERS_URL =
   (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000") + "/api/users";
@@ -17,7 +19,7 @@ const EMPTY = {
 };
 
 const Register = () => {
-  const { Login } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState(EMPTY);
@@ -51,6 +53,39 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const problem = validate();
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    setError("");
+
+    setSubmitting(true);
+    try {
+      await axios.post(USERS_URL, {
+        command: "insert",
+        data: {
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          email: form.email.trim(),
+          username: form.username.trim(),
+          password: form.password,
+        },
+      });
+
+      const res = await axios.post(USERS_URL, {
+        command: "login",
+        data: { username: form.username, password: form.password },
+      });
+
+      login(res.data.token, res.data.user);
+      navigate("/", { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -93,17 +128,16 @@ const Register = () => {
           value={form.username}
           onChange={update("username")}
         />
-        <input
+        {/* <input
           className="w-full rounded border p-2"
           type="password"
           placeholder="Password"
           value={form.password}
           onChange={update("password")}
-        />
-        <input
-          className="w-full rounded border p-2"
-          type="password"
-          placeholder="Cofirm Password"
+        /> */}
+        <PasswordInput value={form.password} onChange={update("password")} />
+        <PasswordInput
+          placeholder="Confirm Password"
           value={form.confirm}
           onChange={update("confirm")}
         />
