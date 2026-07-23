@@ -12,7 +12,6 @@ import {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const USERS_URL = API_URL + "/api/users";
 const TOKEN_KEY = "token";
-
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
