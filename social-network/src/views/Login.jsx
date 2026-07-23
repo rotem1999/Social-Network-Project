@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/context/AuthContext";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 const USERS_URL =
   (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000") + "/api/users";
@@ -44,9 +44,12 @@ const Login = () => {
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <h1>Login</h1>
+    <div className="flex flex-col items-center justify-center min-h-screen p-6">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm space-y-4 rounded-2xl border p-6"
+      >
+        <h1 className="text-2xl font-bold">Login</h1>
         {error && (
           <div className="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-700">
             {error}
@@ -61,7 +64,7 @@ const Login = () => {
         />
         <input
           className="w-full rounded border p-2"
-          placeHolder="Password"
+          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -84,4 +87,5 @@ const Login = () => {
     </div>
   );
 };
+
 export default Login;
