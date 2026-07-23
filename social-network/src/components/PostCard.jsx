@@ -78,9 +78,11 @@ const PostCard = ({ post, onDeleted }) => {
           className="mt-2 w-full rounded-lg border object-cover"
         />
       )}
-      <p className="mt-1 whitespace-pre-wrap text-sm text-gray-800">
-        {post.content}
-      </p>
+      {post.content && (
+        <p className="mt-1 whitespace-pre-wrap text-sm text-gray-800">
+          {post.content}
+        </p>
+      )}
 
       {isOwner && (
         <div className="mt-3 flex gap-2">

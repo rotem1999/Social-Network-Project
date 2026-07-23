@@ -66,6 +66,7 @@ export function AuthProvider({ children }) {
     delete axios.defaults.headers.common.Authorization;
     setToken(null);
     setUser(null);
+
     try {
       await signOut(auth);
     } catch (e) {
