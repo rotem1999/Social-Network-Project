@@ -3,6 +3,7 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { POSTS_URL } from "@/lib/api";
+import PostCard from "@/components/PostCard";
 
 const Feed = () => {
   const [posts, setPosts] = useState([]);
