@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import TopBar from "./TopBar";
 import GroupsDrawer from "./GroupDrawer";
+import BottomBar from "./BottomBar";
 
 const AppLayout = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
