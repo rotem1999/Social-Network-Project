@@ -1,5 +1,5 @@
 "use client";
-import Navigator from "./components/Navigator";
+import Navigator from "@/routes/Navigator";
 
 export default function Home() {
   return (
