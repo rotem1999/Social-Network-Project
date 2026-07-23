@@ -11,13 +11,17 @@ const Account = () => {
       <h1 className="text-2xl font-bold">Account</h1>
       <dl className="rounded-2xl border p-4 text-sm">
         <div className="flex justify-between py-1">
-          <dt className="text-gray-500">Name</dt>
+          <dt className="text-gray-500">Name:</dt>
           <dd>
             {user.firstName} {user.lastName}
           </dd>
         </div>
         <div className="flex justify-between py-1">
-          <dt className="text-gray-500">Email</dt>
+          <dt className="text-gray-500">Username</dt>
+          <dd>{user.username}</dd>
+        </div>
+        <div className="flex justify-between py-1">
+          <dt className="text-gray-500">Email:</dt>
           <dd>{user.email}</dd>
         </div>
       </dl>

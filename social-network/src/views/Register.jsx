@@ -5,9 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
 import PasswordInput from "@/components/PasswordInput";
-
-const USERS_URL =
-  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000") + "/api/users";
+import { USERS_URL } from "@/lib/api";
 
 const EMPTY = {
   firstName: "",

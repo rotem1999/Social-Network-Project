@@ -4,9 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-
-const GROUPS_URL =
-  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000") + "/api/groups";
+import { GROUPS_URL } from "@/lib/api";
 
 const GroupsDrawer = ({ open, onClose }) => {
   const { user } = useAuth();

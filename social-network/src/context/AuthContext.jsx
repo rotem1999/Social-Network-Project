@@ -1,9 +1,8 @@
 "use client";
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import axios from "axios";
+import { USERS_URL } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const USERS_URL = API_URL + "/api/users";
 const TOKEN_KEY = "token";
 const AuthContext = createContext(null);
 
