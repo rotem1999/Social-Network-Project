@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import RedirectIfAuthed from "./RedirectIfAuthed";
+import RequireAuth from "./RequireAuth";
+import Login from "@/views/Login";
 
 function Navigator() {
   const [mounted, setMounted] = useState(false);
@@ -17,8 +20,8 @@ function Navigator() {
     <BrowserRouter>
       <Routes>
         <Route element={<RedirectIfAuthed />}>
-          <route path="/login" element={<Login />} />
-          <route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          {/* <route path="/register" element={<Register />} /> */}
         </Route>
 
         <Route element={<RequireAuth />}>
