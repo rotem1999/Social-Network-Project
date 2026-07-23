@@ -7,6 +7,8 @@ import Login from "@/views/Login";
 import Register from "@/views/Register";
 import { AuthProvider } from "@/context/AuthContext";
 import Feed from "@/views/Feed";
+import AppLayout from "@/components/AppLayout";
+import Account from "@/views/Account";
 
 function Navigator() {
   const [mounted, setMounted] = useState(false);
@@ -29,7 +31,11 @@ function Navigator() {
           </Route>
 
           <Route element={<RequireAuth />}>
-            <Route path="/" element={<Feed />} />
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Feed />} />
+              <Route path="/inbox" element={<Inbox />} />
+              <Route path="/account" element={<Account />} />
+            </Route>
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
