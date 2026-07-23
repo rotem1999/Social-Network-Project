@@ -495,9 +495,14 @@ app.post("/api/posts", async (req, res) => {
   try {
     switch (command) {
       case "insert": {
-        if (!data.title || !data.content || !data.group) {
+        if (!data.title || !data.group) {
           return res.status(400).json({
-            message: "title, content and group are required fields",
+            message: "Title and group are required fields",
+          });
+        }
+        if (!data.content && !!data.media) {
+          return res.status(400).json({
+            message: "A post must include text or media",
           });
         }
 
@@ -516,7 +521,7 @@ app.post("/api/posts", async (req, res) => {
 
         const newPost = new Post({
           title: data.title,
-          content: data.content,
+          content: data.content || "",
           author: caller._id,
           group: group._id,
           media: data.media || "",
