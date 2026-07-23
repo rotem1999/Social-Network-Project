@@ -128,13 +128,6 @@ const Register = () => {
           value={form.username}
           onChange={update("username")}
         />
-        {/* <input
-          className="w-full rounded border p-2"
-          type="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={update("password")}
-        /> */}
         <PasswordInput value={form.password} onChange={update("password")} />
         <PasswordInput
           placeholder="Confirm Password"

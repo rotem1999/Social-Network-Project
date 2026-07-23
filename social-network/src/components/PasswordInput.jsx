@@ -22,6 +22,7 @@ const PasswordInput = ({
         onClick={() => setVisible((v) => !v)}
         aria-label={visible ? "hide password" : "show password"}
         className="absolute inset-y-0 right-0 flex items-center px-3"
+        title={visible ? "Hide password" : "show password"}
       >
         <img
           src={visible ? "/eye-off.svg" : "/eye.svg"}

@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import PasswordInput from "@/components/PasswordInput";
+import axios from "axios";
 
 const USERS_URL =
   (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000") + "/api/users";
@@ -19,9 +20,9 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(e);
+    setError("");
 
-    if (!username.trim() || !password.trim()) {
+    if (!username.trim() || !password) {
       setError("Username and password are required");
       return;
     }

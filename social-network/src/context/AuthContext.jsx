@@ -48,14 +48,14 @@ export function AuthProvider({ children }) {
 
   function login(newToken, newUser) {
     localStorage.setItem(TOKEN_KEY, newToken);
-    axios.defautls.headers.common.Authorization = "Bearer " + newToken;
+    axios.defaults.headers.common.Authorization = "Bearer " + newToken;
     setToken(newToken);
     setUser(newUser);
   }
 
   function logout() {
     localStorage.removeItem(TOKEN_KEY);
-    delete axios.defautls.headers.common.Authorization;
+    delete axios.defaults.headers.common.Authorization;
     setToken(null);
     setUser(null);
   }
