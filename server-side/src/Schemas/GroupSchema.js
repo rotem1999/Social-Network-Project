@@ -16,6 +16,7 @@ const GroupSchema = {
   pendingRequests: [
     { type: mongoose.Schema.Types.ObjectId, ref: "User", default: [] },
   ],
+  icon: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
 };
 

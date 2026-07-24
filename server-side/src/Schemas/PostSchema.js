@@ -8,6 +8,8 @@ const PostSchema = {
   createdAt: { type: Date, default: Date.now },
   media: { type: String, default: "" },
   mediaType: { type: String, enum: ["", "image", "video"], default: "" },
+  upvoters: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  downvoters: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 };
 
 module.exports = { PostSchema };

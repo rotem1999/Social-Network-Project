@@ -14,7 +14,7 @@ const AppLayout = () => {
       <TopBar onMenu={() => setDrawerOpen(true)} />
       <GroupsDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <main className="mx-auto max-w-2xl px-4 pt-16 pb-24">
+      <main className="mx-auto max-w-4xl px-5 pt-16 pb-24">
         <Outlet />
       </main>
 

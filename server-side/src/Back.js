@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const admin = require("firebase-admin");
+const { initializeApp, cert } = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
 const serviceAccount = require("../social-network-prj-firebase.json");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -19,7 +20,7 @@ app.use(bodyParser.json());
 mongoose.connect(process.env.MONGODB_URI);
 
 // initialize firebase
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+initializeApp({ credential: cert(serviceAccount) });
 
 const userSchema = new mongoose.Schema(UserSchema);
 const groupSchema = new mongoose.Schema(GroupSchema);
@@ -79,9 +80,9 @@ app.post("/api/users", async (req, res) => {
             .json({ message: "wrong username or password" });
         }
 
-        const firebaseToken = await admin
-          .auth()
-          .createCustomToken(String(user._id));
+        const firebaseToken = await getAuth().createCustomToken(
+          String(user._id),
+        );
 
         const token = jwt.sign(
           { userId: user._id, username: user.username },
@@ -238,6 +239,7 @@ app.post("/api/groups", async (req, res) => {
           admins: [caller._id],
           members: [caller._id],
           isPrivate: data.isPrivate || false,
+          icon: data.icon || "",
         });
         await newGroup.save();
 
@@ -255,6 +257,7 @@ app.post("/api/groups", async (req, res) => {
           description: group.description,
           createdAt: group.createdAt,
           isPrivate: group.isPrivate,
+          icon: group.icon,
         });
 
         if (data.name) {
@@ -322,6 +325,7 @@ app.post("/api/groups", async (req, res) => {
             data.isPrivate !== undefined
               ? data.isPrivate
               : foundGroup.isPrivate,
+          icon: data.icon !== undefined ? data.icon : foundGroup.icon,
         };
 
         const editedGroup = await Group.findByIdAndUpdate(
@@ -500,7 +504,7 @@ app.post("/api/posts", async (req, res) => {
             message: "Title and group are required fields",
           });
         }
-        if (!data.content && !!data.media) {
+        if (!data.content && !data.media) {
           return res.status(400).json({
             message: "A post must include text or media",
           });
@@ -526,6 +530,7 @@ app.post("/api/posts", async (req, res) => {
           group: group._id,
           media: data.media || "",
           mediaType: data.mediaType || "",
+          upvoters: [caller._id],
         });
         await newPost.save();
 
@@ -533,6 +538,19 @@ app.post("/api/posts", async (req, res) => {
       }
 
       case "select": {
+        const shape = (p) => {
+          const obj = p.toObject();
+          obj.score = (p.upvoters || []).length - (p.downvoters || []).length;
+          obj.myVote = (p.upvoters || []).some((id) => id.equals(caller._id))
+            ? 1
+            : (p.downvoters || []).some((id) => id.equals(caller._id))
+              ? -1
+              : 0;
+          delete obj.upvoters;
+          delete obj.downvoters;
+          return obj;
+        };
+
         const memberGroups = await Group.find({ members: caller._id }).select(
           "_id",
         );
@@ -544,6 +562,7 @@ app.post("/api/posts", async (req, res) => {
         const visibleGroupIds = visibleGroups.map((group) => group._id);
 
         if (data.feed) {
+          const FEED_MAX = 50;
           const feedPosts = await Post.find({
             $or: [
               { author: caller._id },
@@ -552,10 +571,14 @@ app.post("/api/posts", async (req, res) => {
             ],
           })
             .populate("author", "username firstName lastName")
-            .populate("group", "name")
-            .sort({ createdAt: -1 });
+            .populate("group", "name icon")
+            .sort({ createdAt: -1 })
+            .limit(FEED_MAX);
 
-          return res.json({ message: "Feed fetched", posts: feedPosts });
+          return res.json({
+            message: "Feed fetched",
+            posts: feedPosts.map(shape),
+          });
         }
 
         const filter = { group: { $in: visibleGroupIds } };
@@ -600,7 +623,7 @@ app.post("/api/posts", async (req, res) => {
           .populate("group", "name")
           .sort({ createdAt: -1 });
 
-        return res.json({ message: "Posts fetched", posts });
+        return res.json({ message: "Posts fetched", posts: posts.map(shape) });
       }
 
       case "update": {
@@ -654,6 +677,35 @@ app.post("/api/posts", async (req, res) => {
         await Post.findByIdAndDelete(post._id);
 
         return res.json({ message: "post deleted" });
+      }
+
+      case "vote": {
+        if (!data.postId) {
+          return res
+            .status(400)
+            .json({ message: "postId is a required field" });
+        }
+
+        const post = await Post.findById(data.postId);
+        if (!post) {
+          return res.status(404).json({ message: "post not found" });
+        }
+
+        post.upvoters = post.upvoters.filter((id) => !id.equals(caller._id));
+        post.downvoters = post.downvoters.filter(
+          (id) => !id.equals(caller._id),
+        );
+        if (data.value === 1) {
+          post.upvoters.push(caller._id);
+        } else if (data.value === -1) {
+          post.downvoters.push(caller._id);
+        }
+        await post.save();
+
+        return res.json({
+          message: "vote registered",
+          score: post.upvoters.length - post.downvoters.length,
+        });
       }
 
       default:

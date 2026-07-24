@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { GROUPS_URL } from "@/lib/Api";
+import { XIcon } from "@/components/Icons";
+import GroupIcon from "@/components/GroupIcon";
 
 const GroupsDrawer = ({ open, onClose }) => {
   const { user } = useAuth();
@@ -38,14 +40,14 @@ const GroupsDrawer = ({ open, onClose }) => {
           (open ? "translate-x-0" : "-translate-x-full")
         }
       >
-        <div className="flex items-center justift-between border-b p-4">
+        <div className="flex items-center justify-between border-b p-4">
           <h2 className="font-bold">Your groups</h2>
           <button
             onClick={onClose}
             aria-label="Close menu"
-            className="rounded p-1 hover:bg-gray-100"
+            className="rounded p-1 text-gray-600 hover:bg-gray-100"
           >
-            X
+            <XIcon />
           </button>
         </div>
         <nav className="p-2">
@@ -60,8 +62,9 @@ const GroupsDrawer = ({ open, onClose }) => {
                 key={group._id}
                 to={"/g/" + group.name}
                 onClick={onClose}
-                className="block rounded px-3 py-2 text-sm transition hover:bg-gray-100"
+                className="flex items-center gap-2 rounded px-3 py-2 text-sm transition hover:bg-gray-100"
               >
+                <GroupIcon src={group.icon} size={24} />
                 r/{group.name}
               </Link>
             ))
