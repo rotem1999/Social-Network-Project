@@ -21,8 +21,7 @@ const CreateGroup = () => {
   const onPickIcon = (e) => {
     const file = e.target.files[0];
     if (!f) return;
-    if (!["image/jpeg", "image/png"].includes(file.type));
-    {
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
       setError("Group icon must be a JPEG or PNG image");
       return;
     }
