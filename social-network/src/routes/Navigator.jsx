@@ -11,6 +11,7 @@ import AppLayout from "@/components/AppLayout";
 import Account from "@/views/Account";
 import Inbox from "@/views/Inbox";
 import CreateGroup from "@/views/CreateGroup";
+import CreatePost from "@/views/CreatePost";
 
 function Navigator() {
   const [mounted, setMounted] = useState(false);
@@ -38,6 +39,7 @@ function Navigator() {
               <Route path="/inbox" element={<Inbox />} />
               <Route path="/account" element={<Account />} />
               <Route path="/create-group" element={<CreateGroup />} />
+              <Route path="/create-post" element={<CreatePost />} />
             </Route>
           </Route>
 

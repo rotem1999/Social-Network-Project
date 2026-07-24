@@ -15,10 +15,11 @@ const GroupsDrawer = ({ open, onClose }) => {
   useEffect(() => {
     if (!open) return;
     axios
-      .post(GROUPS_URL, { command: "select", data: [] })
+      .post(GROUPS_URL, { command: "select", data: {} })
       .then((res) => {
+        const uid = user?.id || user?._id;
         const joined = (res.data.groups || []).filter((g) =>
-          g.members?.some((id) => id === user?.id),
+          g.members?.some((id) => id === uid),
         );
         setGroups(joined);
       })

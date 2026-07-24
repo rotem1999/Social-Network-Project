@@ -33,7 +33,8 @@ export function AuthProvider({ children }) {
         //  token is valid
         axios.defaults.headers.common.Authorization = "Bearer " + stored;
         setToken(stored);
-        setUser(res.data.user);
+        const u = res.data.user;
+        setUser({ ...u, id: u._id || u.id });
       })
       .catch(() => {
         // token is not valid -> got 401 / expired / invalid token

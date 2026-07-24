@@ -3,43 +3,10 @@
 import GroupIcon from "@/components/GroupIcon";
 import { GROUPS_URL } from "@/lib/Api";
 import { UploadMedia } from "@/lib/UploadMedia";
+import { resizeImage } from "@/lib/resizeImage";
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const resizeImage = (file, size = 200) =>
-  new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-
-      const side = Math.min(img.width, img.height);
-      const sx = (img.width - side) / 2;
-      const sy = (img.height - side) / 2;
-      const out = Math.min(size, side); // don't upscale
-
-      const canvas = document.createElement("canvas");
-      canvas.width = out;
-      canvas.height = out;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, sx, sy, side, side, 0, 0, out, out);
-
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) return reject(new Error("resize failed"));
-          resolve(new File([blob], "icon.jpg", { type: "image/jpeg" }));
-        },
-        "image/jpeg",
-        0.85,
-      );
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("could not load image"));
-    };
-    img.src = url;
-  });
 
 const CreateGroup = () => {
   const navigate = useNavigate();
