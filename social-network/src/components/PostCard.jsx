@@ -5,7 +5,7 @@ import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import { POSTS_URL } from "@/lib/Api";
 import VoteCard from "./VoteCard";
-import { CommentIcon, ShareIcon } from "./Icons";
+import { CommentIcon, ShareIcon, KebabIcon } from "./Icons";
 import GroupIcon from "@/components/GroupIcon";
 
 const timeAgo = (date) => {
@@ -37,7 +37,7 @@ const PostCard = ({ post, onDeleted }) => {
 
   const author = post.author || {};
   const group = post.group || {};
-  const isOwner = user?.id === author.id;
+  const isOwner = (user?.id || user?._id) === author._id;
 
   const navigate = useNavigate();
   const postUrl = `/r/${group.name}/comments/${post._id}/${slugify(post.title)}`;
@@ -66,8 +66,16 @@ const PostCard = ({ post, onDeleted }) => {
     }
   };
 
+  const onCardClick = (e) => {
+    if (e.target.closest("a, button, video, img")) return;
+    navigate(postUrl);
+  };
+
   return (
-    <article className="rounded-xl border bg-white p-4 transition hover:shadow-sm">
+    <article
+      className="rounded-xl border bg-white p-4 transition hover:shadow-sm hover:bg-gray-50 hover:cursor-pointer"
+      onClick={onCardClick}
+    >
       <div className="mb-2 flex items-start justify-between">
         <div className="flex items-center gap-2">
           {group.name && <GroupIcon src={group.icon} size={36} />}
@@ -92,21 +100,27 @@ const PostCard = ({ post, onDeleted }) => {
         {isOwner && (
           <div className="relative">
             <button
-              onClick={() => setMenuOpen((open) => !open)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((open) => !open);
+              }}
               aria-label="Post options"
-              className="rounded-full px-2 py-1 leading-none text-gray-500 transition hover:bg-gray-100"
+              className="rounded-full px-2 py-1 leading-none text-gray-500 transition hover:bg-gray-100 hover:cursor-pointer"
             >
-              ⋮
+              <KebabIcon size={18} />
             </button>
             {menuOpen && (
               <>
                 <div
                   className="fixed inset-0 z-10"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                  }}
                 />
                 <div className="absolute right-0 z-20 mt-1 w-32 overflow-hidden rounded-lg border bg-white py-1 shadow-lg">
                   <Link
-                    to={"/edit/post/" + post._id}
+                    to={"/edit-post/" + post._id}
                     className="block px-3 py-1.5 text-sm transition hover:bg-gray-100"
                   >
                     Edit
@@ -177,6 +191,22 @@ const PostCard = ({ post, onDeleted }) => {
           <span>Share</span>
         </button>
       </div>
+
+      {zoom && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            setZoom(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+        >
+          <img
+            src={post.media}
+            alt=""
+            className="max-h-full max-w-full rounded-lg object-contain"
+          />
+        </div>
+      )}
     </article>
   );
 };

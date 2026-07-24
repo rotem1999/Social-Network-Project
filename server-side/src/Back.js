@@ -10,6 +10,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { GroupSchema } = require("./Schemas/GroupSchema");
 const { PostSchema } = require("./Schemas/PostSchema");
+const { CommentSchema } = require("./Schemas/CommentSchema");
 
 const saltRounds = 10;
 const app = express();
@@ -25,10 +26,12 @@ initializeApp({ credential: cert(serviceAccount) });
 const userSchema = new mongoose.Schema(UserSchema);
 const groupSchema = new mongoose.Schema(GroupSchema);
 const postSchema = new mongoose.Schema(PostSchema);
+const commentSchema = new mongoose.Schema(CommentSchema);
 
 const User = mongoose.model("User", userSchema);
 const Group = mongoose.model("Group", groupSchema);
 const Post = mongoose.model("Post", postSchema);
+const Comment = mongoose.model("Comment", commentSchema);
 
 const verifyToken = async (req) => {
   const header = req.headers.authorization;
@@ -561,6 +564,19 @@ app.post("/api/posts", async (req, res) => {
         }).select("_id");
         const visibleGroupIds = visibleGroups.map((group) => group._id);
 
+        if (data.postId) {
+          const one = await Post.findById(data.postId)
+            .populate("author", "username firstName lastName")
+            .populate("group", "name icon");
+          if (!one) {
+            return res.status(404).json({ message: "post not found" });
+          }
+          if (!visibleGroupIds.some((id) => id.equals(one.group._id))) {
+            return res.status(403).json({ message: "post not accessible" });
+          }
+          return res.json({ message: "Post fetched", post: shape(one) });
+        }
+
         if (data.feed) {
           const FEED_MAX = 50;
           const feedPosts = await Post.find({
@@ -706,6 +722,119 @@ app.post("/api/posts", async (req, res) => {
           message: "vote registered",
           score: post.upvoters.length - post.downvoters.length,
         });
+      }
+
+      default:
+        return res.status(400).json({ message: "unknown command" });
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "server error" });
+  }
+});
+
+app.post("/api/comments", async (req, res) => {
+  const { command, data } = req.body;
+
+  const caller = await checkIfLoggedIn(req, res);
+  if (!caller) {
+    return;
+  }
+
+  try {
+    switch (command) {
+      case "insert": {
+        if (!data.postId || !data.content) {
+          return res
+            .status(400)
+            .json({ message: "postId and content are required fields" });
+        }
+
+        const post = await Post.findById(data.postId);
+        if (!post) {
+          return res.status(404).json({ message: "post not found" });
+        }
+
+        const group = await Group.findById(post.group);
+        const canSee =
+          group &&
+          (!group.isPrivate ||
+            group.members.some((id) => id.equals(caller._id)));
+        if (!canSee) {
+          return res.status(403).json({ message: "post not accessible" });
+        }
+
+        const newComment = new Comment({
+          post: post._id,
+          author: caller._id,
+          content: data.content,
+        });
+        await newComment.save();
+        await newComment.populate("author", "username firstName lastName");
+
+        return res.json({ message: "comment added", comment: newComment });
+      }
+
+      case "select": {
+        if (!data.postId) {
+          return res
+            .status(400)
+            .json({ message: "postId is a required field" });
+        }
+
+        const comments = await Comment.find({ post: data.postId })
+          .populate("author", "username firstName lastName")
+          .sort({ createdAt: 1 });
+
+        return res.json({ message: "comments fetched", comments });
+      }
+
+      case "update": {
+        if (!data.commentId || !data.content) {
+          return res
+            .status(400)
+            .json({ message: "commentId and content are required fields" });
+        }
+
+        const comment = await Comment.findById(data.commentId);
+        if (!comment) {
+          return res.status(404).json({ message: "comment not found" });
+        }
+
+        if (!comment.author.equals(caller._id)) {
+          return res
+            .status(403)
+            .json({ message: "you can only edit your own comments" });
+        }
+
+        comment.content = data.content;
+        await comment.save();
+        await comment.populate("author", "username firstName lastName");
+
+        return res.json({ message: "comment updated", comment });
+      }
+
+      case "delete": {
+        if (!data.commentId) {
+          return res
+            .status(400)
+            .json({ message: "commentId is a required field" });
+        }
+
+        const comment = await Comment.findById(data.commentId);
+        if (!comment) {
+          return res.status(404).json({ message: "comment not found" });
+        }
+
+        if (!comment.author.equals(caller._id)) {
+          return res
+            .status(403)
+            .json({ message: "you can only delete your own comments" });
+        }
+
+        await Comment.findByIdAndDelete(comment._id);
+
+        return res.json({ message: "comment deleted" });
       }
 
       default:
