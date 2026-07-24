@@ -29,7 +29,7 @@ const TopBar = ({ onMenu }) => {
           <img src="/menu.svg" alt="" width={22} height={22} />
         </button>
         <span className="text-lg font-bold text-orange-600 [text-shadow:1px_1px_2px_rgba(0,0,0,0.2)]">
-          Reddit like SN
+          REDDIT CLONE
         </span>
       </div>
 

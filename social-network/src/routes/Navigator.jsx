@@ -10,6 +10,7 @@ import Feed from "@/views/Feed";
 import AppLayout from "@/components/AppLayout";
 import Account from "@/views/Account";
 import Inbox from "@/views/Inbox";
+import CreateGroup from "@/views/CreateGroup";
 
 function Navigator() {
   const [mounted, setMounted] = useState(false);
@@ -36,6 +37,7 @@ function Navigator() {
               <Route path="/" element={<Feed />} />
               <Route path="/inbox" element={<Inbox />} />
               <Route path="/account" element={<Account />} />
+              <Route path="/create-group" element={<CreateGroup />} />
             </Route>
           </Route>
 

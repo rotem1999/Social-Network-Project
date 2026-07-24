@@ -7,6 +7,40 @@ import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const resizeImage = (file, size = 200) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2;
+      const sy = (img.height - side) / 2;
+      const out = Math.min(size, side); // don't upscale
+
+      const canvas = document.createElement("canvas");
+      canvas.width = out;
+      canvas.height = out;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, out, out);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return reject(new Error("resize failed"));
+          resolve(new File([blob], "icon.jpg", { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        0.85,
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("could not load image"));
+    };
+    img.src = url;
+  });
+
 const CreateGroup = () => {
   const navigate = useNavigate();
 
@@ -18,20 +52,25 @@ const CreateGroup = () => {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const onPickIcon = (e) => {
-    const file = e.target.files[0];
+  const onPickIcon = async (e) => {
+    const f = e.target.files[0];
     if (!f) return;
-    if (!["image/jpeg", "image/png"].includes(file.type)) {
+    if (!["image/jpeg", "image/png"].includes(f.type)) {
       setError("Group icon must be a JPEG or PNG image");
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setError("Group icon must be under 2 MB");
+    if (f.size > 10 * 1024 * 1024) {
+      setError("Please choose an image under 10 MB");
       return;
     }
     setError("");
-    setIconFile(file);
-    setIconPreview(URL.createObjectURL(file));
+    try {
+      const resized = await resizeImage(f, 200);
+      setIconFile(resized);
+      setIconPreview(URL.createObjectURL(resized));
+    } catch {
+      setError("Could not process that image");
+    }
   };
 
   const validate = () => {
@@ -108,8 +147,21 @@ const CreateGroup = () => {
         </div>
 
         <div>
+          <label className="mb-1 block text-sm font-medium">Name</label>
+          <div className="flex items-center rounded-full border px-3">
+            <span className="text-gray-400">r/</span>
+            <input
+              className="w-full rounded-full py-2 pl-1 outline-none"
+              placeholder="groupname"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div>
           <label className="mb-1 block text-sm font-medium">Descripiton</label>
-          <textArea
+          <textarea
             className="w-full rounded-lg border p-2 text-sm"
             rows={3}
             placeholder="What is this group about?..."
@@ -126,6 +178,14 @@ const CreateGroup = () => {
           />
           Private Group (Only members can see posts)
         </label>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-full bg-orange-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-700 disabled:opacity-50"
+        >
+          {submitting ? "Creating..." : "Create group"}
+        </button>
       </form>
     </div>
   );
