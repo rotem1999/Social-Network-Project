@@ -98,7 +98,7 @@ const CreatePost = () => {
   };
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="mx-auto max-w-2xl">
       <h1 className="mb-4 text-2xl font-bold">Create a post</h1>
 
       <form

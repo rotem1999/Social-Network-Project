@@ -89,7 +89,7 @@ const CreateGroup = () => {
   };
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="mx-auto max-w-2xl">
       <h1 className="mb-4 text-2xl font-bald">Create Group</h1>
       <form
         onSubmit={handleSubmit}

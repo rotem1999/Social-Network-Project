@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { GROUPS_URL } from "@/lib/Api";
-import { XIcon } from "@/components/Icons";
+import { HomeIcon, PlusIcon, XIcon } from "@/components/Icons";
 import GroupIcon from "@/components/GroupIcon";
+import NavItem from "./NavItem";
 
 const GroupsDrawer = ({ open, onClose }) => {
   const { user } = useAuth();
@@ -37,19 +38,47 @@ const GroupsDrawer = ({ open, onClose }) => {
       />
       <aside
         className={
-          "fixed inset-y-0 left-0 z-50 w-72 max-w-[80%] bg-white shadow-xl transition-transform duration-300 " +
+          "fixed inset-y-0 left-0 top-14 z-50 w-72 max-w-[80%] bg-white shadow-xl transition-transform duration-300 " +
           (open ? "translate-x-0" : "-translate-x-full")
         }
       >
-        <div className="flex items-center justify-between border-b p-4">
-          <h2 className="font-bold">Your groups</h2>
+        <div className="relative px-3 pt-4">
+          <ul className="space-y-1">
+            <li>
+              <NavItem
+                to="/"
+                end
+                label="Home"
+                icon={HomeIcon}
+                onClick={onClose}
+              />
+            </li>
+            <li>
+              <NavItem
+                to="/create-group"
+                end
+                label="Create Group"
+                icon={PlusIcon}
+                onClick={onClose}
+              />
+            </li>
+          </ul>
           <button
             onClick={onClose}
             aria-label="Close menu"
-            className="rounded p-1 text-gray-600 hover:bg-gray-100"
+            className={
+              "absolute right-0 top-8 -translate-y-1/2 translate-x-1/2 rounded-full border bg-white p-1.5 text-gray-600 shadow-sm transition hover:bg-gray-100 " +
+              (open
+                ? "cursor-pointer opacity-100"
+                : "pointer-events-none opacity-0")
+            }
           >
-            <XIcon />
+            <XIcon size={16} />
           </button>
+        </div>
+        <hr className="opacity-10 mt-5 mb-5" />
+        <div className="mt-4 px-4 pb-1">
+          <h2 className="font-bold">Your groups</h2>
         </div>
         <nav className="p-2">
           {groups.length === 0 ? (

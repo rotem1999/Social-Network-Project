@@ -147,7 +147,7 @@ const PostCard = ({ post, onDeleted }) => {
         </div>
       )}
       {post.content && (
-        <p className="mt-1 whitespace-pre-wrap text-sm text-gray-800">
+        <p className="mt-1 whitespace-pre-wrap text-sm text-gray-800 mt-4 mb-5">
           {post.content}
         </p>
       )}
