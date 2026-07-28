@@ -96,7 +96,7 @@ const PostPage = () => {
   if (!post) return null;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="mx-auto max-w-4xl space-y-4 min-w-2xl">
       <div className="relative">
         <button
           onClick={() => navigate(-1)}
