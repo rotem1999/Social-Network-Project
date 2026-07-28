@@ -12,6 +12,8 @@ import Account from "@/views/Account";
 import Inbox from "@/views/Inbox";
 import CreateGroup from "@/views/CreateGroup";
 import CreatePost from "@/views/CreatePost";
+import PostPage from "@/views/PostPage";
+import EditPost from "@/views/EditPost";
 
 function Navigator() {
   const [mounted, setMounted] = useState(false);
@@ -40,6 +42,11 @@ function Navigator() {
               <Route path="/account" element={<Account />} />
               <Route path="/create-group" element={<CreateGroup />} />
               <Route path="/create-post" element={<CreatePost />} />
+              <Route
+                path="/r/:group/comments/:postId/:slug?"
+                element={<PostPage />}
+              />
+              <Route path="/edit-post/:postId" element={<EditPost />} />
             </Route>
           </Route>
 

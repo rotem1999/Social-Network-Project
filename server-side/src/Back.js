@@ -741,6 +741,19 @@ app.post("/api/comments", async (req, res) => {
     return;
   }
 
+  const shapeComment = (c) => {
+    const obj = c.toObject();
+    obj.score = (c.upvoters || []).length - (c.downvoters || []).length;
+    obj.myVote = (c.upvoters || []).some((id) => id.equals(caller._id))
+      ? 1
+      : (c.downvoters || []).some((id) => id.equals(caller._id))
+        ? -1
+        : 0;
+    delete obj.upvoters;
+    delete obj.downvoters;
+    return obj;
+  };
+
   try {
     switch (command) {
       case "insert": {
@@ -764,15 +777,31 @@ app.post("/api/comments", async (req, res) => {
           return res.status(403).json({ message: "post not accessible" });
         }
 
+        let parent = null;
+        if (data.parentId) {
+          const parentComment = await Comment.findById(data.parentId);
+          if (!parentComment || !parentComment.post.equals(post._id)) {
+            return res
+              .status(400)
+              .json({ message: "invalid parent comment" });
+          }
+          parent = parentComment._id;
+        }
+
         const newComment = new Comment({
           post: post._id,
           author: caller._id,
           content: data.content,
+          parent,
+          upvoters: [caller._id],
         });
         await newComment.save();
         await newComment.populate("author", "username firstName lastName");
 
-        return res.json({ message: "comment added", comment: newComment });
+        return res.json({
+          message: "comment added",
+          comment: shapeComment(newComment),
+        });
       }
 
       case "select": {
@@ -786,7 +815,10 @@ app.post("/api/comments", async (req, res) => {
           .populate("author", "username firstName lastName")
           .sort({ createdAt: 1 });
 
-        return res.json({ message: "comments fetched", comments });
+        return res.json({
+          message: "comments fetched",
+          comments: comments.map(shapeComment),
+        });
       }
 
       case "update": {
@@ -811,7 +843,10 @@ app.post("/api/comments", async (req, res) => {
         await comment.save();
         await comment.populate("author", "username firstName lastName");
 
-        return res.json({ message: "comment updated", comment });
+        return res.json({
+          message: "comment updated",
+          comment: shapeComment(comment),
+        });
       }
 
       case "delete": {
@@ -835,6 +870,37 @@ app.post("/api/comments", async (req, res) => {
         await Comment.findByIdAndDelete(comment._id);
 
         return res.json({ message: "comment deleted" });
+      }
+
+      case "vote": {
+        if (!data.commentId) {
+          return res
+            .status(400)
+            .json({ message: "commentId is a required field" });
+        }
+
+        const comment = await Comment.findById(data.commentId);
+        if (!comment) {
+          return res.status(404).json({ message: "comment not found" });
+        }
+
+        comment.upvoters = comment.upvoters.filter(
+          (id) => !id.equals(caller._id),
+        );
+        comment.downvoters = comment.downvoters.filter(
+          (id) => !id.equals(caller._id),
+        );
+        if (data.value === 1) {
+          comment.upvoters.push(caller._id);
+        } else if (data.value === -1) {
+          comment.downvoters.push(caller._id);
+        }
+        await comment.save();
+
+        return res.json({
+          message: "vote registered",
+          score: comment.upvoters.length - comment.downvoters.length,
+        });
       }
 
       default:
