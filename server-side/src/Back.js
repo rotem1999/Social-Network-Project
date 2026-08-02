@@ -11,6 +11,10 @@ const jwt = require("jsonwebtoken");
 const { GroupSchema } = require("./Schemas/GroupSchema");
 const { PostSchema } = require("./Schemas/PostSchema");
 const { CommentSchema } = require("./Schemas/CommentSchema");
+const http = require("http");
+const { initChatToken } = require("./ChatSocket");
+const { ConversationSchema } = require("./Schemas/ConversationSchema");
+const { MessageSchema } = require("./Schemas/MessageSchema");
 
 const saltRounds = 10;
 const app = express();
@@ -27,11 +31,15 @@ const userSchema = new mongoose.Schema(UserSchema);
 const groupSchema = new mongoose.Schema(GroupSchema);
 const postSchema = new mongoose.Schema(PostSchema);
 const commentSchema = new mongoose.Schema(CommentSchema);
+const conversationSchema = new mongoose.Schema(ConversationSchema);
+const messageSchema = new mongoose.Schema(MessageSchema);
 
 const User = mongoose.model("User", userSchema);
 const Group = mongoose.model("Group", groupSchema);
 const Post = mongoose.model("Post", postSchema);
 const Comment = mongoose.model("Comment", commentSchema);
+const Conversation = mongoose.model("Conversation", ConversationSchema);
+const Message = mongoose.model("Message", MessageSchema);
 
 const verifyToken = async (req) => {
   const header = req.headers.authorization;
@@ -781,9 +789,7 @@ app.post("/api/comments", async (req, res) => {
         if (data.parentId) {
           const parentComment = await Comment.findById(data.parentId);
           if (!parentComment || !parentComment.post.equals(post._id)) {
-            return res
-              .status(400)
-              .json({ message: "invalid parent comment" });
+            return res.status(400).json({ message: "invalid parent comment" });
           }
           parent = parentComment._id;
         }
@@ -912,7 +918,69 @@ app.post("/api/comments", async (req, res) => {
   }
 });
 
-const PORT = process.env.SERVER_PORT;
-app.listen(PORT, () => {
-  console.log(`server running on port:` + PORT);
+app.post("/api/chat", async (req, res) => {
+  const { command, data } = req.body;
+  const caller = await checkIfLoggedIn(req, res);
+  if (!caller) return;
+
+  try {
+    switch (command) {
+      case "start": {
+        const other = await User.findOne({ username: data.username });
+        if (!other) return res.status(404).json({ message: "user not found" });
+
+        if (!caller.friends.some((id) => id.equals(other._id))) {
+          return res
+            .status(403)
+            .json({ message: "You can only chat with friends" });
+        }
+
+        let convo = await Conversation.findOne({
+          isGroup: false,
+          participants: { $all: [caller._id, other._id], $size: 2 },
+        });
+
+        if (!convo) {
+          convo = await Conversation.create({
+            participants: [caller._id, other._id],
+          });
+        }
+        return res.json({ conversation: convo });
+      }
+
+      case "conversations": {
+        const convoList = await Conversation.find({ participants: caller._id })
+          .populate("participants", "username firstName lastName")
+          .sort({ lastMessageAt: -1 });
+
+        return res.json({ conversations: convoList });
+      }
+
+      case "messages": {
+        convo = await Conversation.findById(data.conversationId);
+        if (!convo || !convo.participants.some((id) => id.equals(caller._id))) {
+          return res.status(403).json({ message: "not allowed" });
+        }
+
+        const messages = await Message.find({ conversation: convo._id })
+          .populate("sender", "username firstName lastName")
+          .sort({ createdAt: -1 })
+          .limit(100);
+        return res.json({ messages });
+      }
+
+      default: {
+        return res.status(400).json({ message: "unknown command" });
+      }
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Server Error" });
+  }
 });
+
+const httpServer = http.createServer(app);
+initChatToken(httpServer, { Conversation, Message });
+
+const PORT = process.env.SERVER_PORT;
+httpServer.listen(PORT, () => console.log("server running on port:" + PORT));
