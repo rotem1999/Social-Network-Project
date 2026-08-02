@@ -264,6 +264,7 @@ app.post("/api/groups", async (req, res) => {
           group.members.some((id) => id.equals(caller._id));
 
         const censor = (group) => ({
+          _id: group._id,
           name: group.name,
           description: group.description,
           createdAt: group.createdAt,
@@ -272,18 +273,22 @@ app.post("/api/groups", async (req, res) => {
         });
 
         if (data.name) {
-          const foundGroup = await Group.findOne({ name: data.name }).populate(
-            "pendingRequests",
-            "username",
-          );
+          const foundGroup = await Group.findOne({ name: data.name })
+            .populate("pendingRequests", "username")
+            .populate("members", "username")
+            .populate("admins", "username");
           if (!foundGroup) {
             return res.status(404).json({ message: "group not found" });
           }
 
           if (foundGroup.isPrivate && !isMember(foundGroup)) {
+            const censored = censor(foundGroup);
+            censored.requested = foundGroup.pendingRequests.some((p) =>
+              p._id.equals(caller._id),
+            );
             return res.json({
               message: "Groups fetched but a group is private",
-              groups: [censor(foundGroup)],
+              groups: [censored],
             });
           }
 
@@ -396,6 +401,19 @@ app.post("/api/groups", async (req, res) => {
 
         group.members = group.members.filter((id) => !id.equals(caller._id));
         group.admins = group.admins.filter((id) => !id.equals(caller._id));
+
+        if (group.admins.length === 0) {
+          const groupPosts = await Post.find({ group: group._id }).select("_id");
+          await Comment.deleteMany({
+            post: { $in: groupPosts.map((p) => p._id) },
+          });
+          await Post.deleteMany({ group: group._id });
+          await Group.findByIdAndDelete(group._id);
+          return res.json({
+            message: "left group and deleted it (no admins left)",
+          });
+        }
+
         await group.save();
         return res.json({ message: "left group" });
       }
@@ -469,6 +487,41 @@ app.post("/api/groups", async (req, res) => {
         return res.json({ message: "join request rejected" });
       }
 
+      case "kick": {
+        if (!data.name || !data.username) {
+          return res
+            .status(400)
+            .json({ message: "name and username are required fields" });
+        }
+
+        const group = await Group.findOne({ name: data.name });
+        if (!group) {
+          return res.status(404).json({ message: "group not found" });
+        }
+
+        if (!group.admins.some((id) => id.equals(caller._id))) {
+          return res
+            .status(403)
+            .json({ message: "only admins can kick members" });
+        }
+
+        const target = await User.findOne({ username: data.username });
+        if (!target) {
+          return res.status(404).json({ message: "user not found" });
+        }
+        if (target._id.equals(caller._id)) {
+          return res
+            .status(400)
+            .json({ message: "you cannot kick yourself" });
+        }
+
+        group.members = group.members.filter((id) => !id.equals(target._id));
+        group.admins = group.admins.filter((id) => !id.equals(target._id));
+        await group.save();
+
+        return res.json({ message: "member kicked" });
+      }
+
       case "delete": {
         if (!data.name) {
           return res.status(400).json({ message: "name is a required field" });
@@ -485,6 +538,10 @@ app.post("/api/groups", async (req, res) => {
             .json({ message: "only admins can delete the group" });
         }
 
+        const deletedPosts = await Post.find({ group: group._id }).select("_id");
+        await Comment.deleteMany({
+          post: { $in: deletedPosts.map((p) => p._id) },
+        });
         await Post.deleteMany({ group: group._id });
         await Group.findByIdAndDelete(group._id);
         return res.json({ message: "group deleted" });
@@ -608,7 +665,7 @@ app.post("/api/posts", async (req, res) => {
           });
         }
 
-        const filter = { group: { $in: visibleGroupIds } };
+        const filter = {};
 
         if (data.mine) {
           filter.author = caller._id;
@@ -627,9 +684,13 @@ app.post("/api/posts", async (req, res) => {
               .status(404)
               .json({ message: "group not found: " + data.group });
           }
-          filter.group = visibleGroupIds.some((id) => id.equals(group._id))
-            ? group._id
-            : null;
+          if (
+            group.isPrivate &&
+            !memberGroupIds.some((id) => id.equals(group._id))
+          ) {
+            return res.json({ message: "Posts fetched", posts: [] });
+          }
+          filter.group = group._id;
         }
 
         if (data.keyword) {
@@ -647,10 +708,28 @@ app.post("/api/posts", async (req, res) => {
 
         const posts = await Post.find(filter)
           .populate("author", "username firstName lastName")
-          .populate("group", "name")
-          .sort({ createdAt: -1 });
+          .populate("group", "name icon isPrivate")
+          .sort({ createdAt: -1 })
+          .limit(50);
 
-        return res.json({ message: "Posts fetched", posts: posts.map(shape) });
+        const memberSet = new Set(memberGroupIds.map((id) => id.toString()));
+        const shapeSearch = (p) => {
+          const obj = shape(p);
+          const g = obj.group;
+          if (g?.isPrivate && !memberSet.has(g._id?.toString())) {
+            obj.locked = true;
+            obj.title = "";
+            obj.content = "";
+            obj.media = "";
+            obj.mediaType = "";
+          }
+          return obj;
+        };
+
+        return res.json({
+          message: "Posts fetched",
+          posts: posts.map(shapeSearch),
+        });
       }
 
       case "update": {

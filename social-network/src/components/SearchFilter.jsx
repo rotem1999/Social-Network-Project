@@ -108,7 +108,7 @@ const SearchFilter = ({ q, onApply }) => {
             communityMatches.length > 0 && (
               <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-lg border bg-white shadow-lg">
                 {communityMatches.map((g) => (
-                  <li key={g._id}>
+                  <li key={g._id || g.name}>
                     <button
                       type="button"
                       onMouseDown={() => {

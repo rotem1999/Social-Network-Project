@@ -4,7 +4,7 @@ import { NavLink, useLocation } from "react-router-dom";
 
 const tabs = [
   { to: "/", label: "Home", icon: "/home.svg", end: true },
-  { to: "/inbox", label: "Inbox", icon: "/inbox.svg" },
+  { to: "/inbox", label: "Chat", icon: "/inbox.svg" },
   { to: "/account", label: "Account", icon: "/account.svg" },
 ];
 
