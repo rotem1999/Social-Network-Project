@@ -929,10 +929,10 @@ app.post("/api/chat", async (req, res) => {
         const other = await User.findOne({ username: data.username });
         if (!other) return res.status(404).json({ message: "user not found" });
 
-        if (!caller.friends.some((id) => id.equals(other._id))) {
+        if (other._id.equals(caller._id)) {
           return res
-            .status(403)
-            .json({ message: "You can only chat with friends" });
+            .status(400)
+            .json({ message: "you cannot start a chat with yourself" });
         }
 
         let convo = await Conversation.findOne({

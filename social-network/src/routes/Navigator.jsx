@@ -14,6 +14,7 @@ import CreateGroup from "@/views/CreateGroup";
 import CreatePost from "@/views/CreatePost";
 import PostPage from "@/views/PostPage";
 import EditPost from "@/views/EditPost";
+import SearchPage from "@/views/SearchPage";
 
 function Navigator() {
   const [mounted, setMounted] = useState(false);
@@ -47,6 +48,7 @@ function Navigator() {
                 element={<PostPage />}
               />
               <Route path="/edit-post/:postId" element={<EditPost />} />
+              <Route path="/search" element={<SearchPage />} />
             </Route>
           </Route>
 
