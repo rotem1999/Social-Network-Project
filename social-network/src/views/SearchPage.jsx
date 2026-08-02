@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import axios from "axios";
 import SearchFilter from "@/components/SearchFilter";
+import { POSTS_URL } from "@/lib/Api";
 
 const slugify = (s) =>
   (s || "")

@@ -272,7 +272,10 @@ app.post("/api/groups", async (req, res) => {
         });
 
         if (data.name) {
-          const foundGroup = await Group.findOne({ name: data.name });
+          const foundGroup = await Group.findOne({ name: data.name }).populate(
+            "pendingRequests",
+            "username",
+          );
           if (!foundGroup) {
             return res.status(404).json({ message: "group not found" });
           }
