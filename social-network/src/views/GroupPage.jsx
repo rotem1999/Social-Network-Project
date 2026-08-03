@@ -85,7 +85,7 @@ const GroupPage = () => {
   if (!group) return null;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="mx-auto max-w-2xl space-y-4 min-w-150">
       <div className="flex items-center gap-3 rounded-xl border p-4">
         <GroupIcon src={group.icon} size={56} />
         <div className="min-w-0 flex-1">
@@ -131,69 +131,99 @@ const GroupPage = () => {
       </div>
 
       {isAdmin && (
-        <div className="space-y-3 rounded-xl border p-4 border-blue-500">
-          <div className="flex flex-col space-y-3">
+        <div className="space-y-3 rounded-xl border border-blue-500 p-4">
+          <div className="flex items-center justify-between">
             <h2 className="font-semibold">Admin Menu</h2>
-            <div className="flex items-center justify-between">
-              <div>
-                <p>Pending join requests</p>
-                {group.pendingRequests.length === 0 ? (
-                  <p className="text-sm">No pending requests...</p>
-                ) : (
-                  <p>Pending is:...</p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setMembersOpen((o) => !o)}
-                  className="rounded-full border px-3 py-1 text-xs transition hover:bg-gray-100 hover:cursor-pointer"
-                >
-                  Members
-                </button>
-                <button
-                  onClick={remove}
-                  disabled={busy}
-                  className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600 transition hover:bg-red-50 disabled:opacity-50 hover:cursor-pointer"
-                >
-                  Delete group
-                </button>
-              </div>
-              {membersOpen && (
-                <div className="space-y-1 border-t pt-2">
-                  <p className="text-xs text-gray-500">Members</p>
-                  {group.members?.map((member) => {
-                    const mid = idOf(member);
-                    return (
-                      <div
-                        key={mid}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <span>
-                          u/{member.username || mid}
-                          {adminIds.has(mid) && (
-                            <span className="ml-1 text-xs text-gray-400">
-                              (admin)
-                            </span>
-                          )}
-                        </span>
-                        {!adminIds.has(mid) && mid !== uid && (
-                          <button
-                            onClick={() =>
-                              action("kick", { username: member.username })
-                            }
-                            disabled={busy}
-                            className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50 hover:cursor-pointer"
-                          >
-                            Kick
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setMembersOpen((o) => !o)}
+                className="rounded-full border px-3 py-1 text-xs transition hover:bg-gray-100 hover:cursor-pointer"
+              >
+                Members
+              </button>
+              <button
+                onClick={remove}
+                disabled={busy}
+                className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600 transition hover:bg-red-50 disabled:opacity-50 hover:cursor-pointer"
+              >
+                Delete group
+              </button>
             </div>
           </div>
+
+          <div className="space-y-2 border-t pt-2">
+            <p className="text-xs text-gray-500">Pending join requests</p>
+            {group.pendingRequests?.length === 0 ? (
+              <p className="text-sm text-gray-400">No pending requests</p>
+            ) : (
+              group.pendingRequests.map((req) => {
+                const rid = idOf(req);
+                return (
+                  <div
+                    key={rid}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span>u/{req.username || rid}</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() =>
+                          action("approve", { username: req.username })
+                        }
+                        disabled={busy}
+                        className="rounded-full border border-green-300 px-3 py-1 text-xs text-green-700 transition hover:bg-green-50 disabled:opacity-50 hover:cursor-pointer"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() =>
+                          action("reject", { username: req.username })
+                        }
+                        disabled={busy}
+                        className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600 transition hover:bg-red-50 disabled:opacity-50 hover:cursor-pointer"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {membersOpen && (
+            <div className="space-y-1 border-t pt-2">
+              <p className="text-xs text-gray-500">Members</p>
+              {group.members?.map((member) => {
+                const mid = idOf(member);
+                return (
+                  <div
+                    key={mid}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span>
+                      u/{member.username || mid}
+                      {adminIds.has(mid) && (
+                        <span className="ml-1 text-xs text-gray-400">
+                          (admin)
+                        </span>
+                      )}
+                    </span>
+                    {!adminIds.has(mid) && mid !== uid && (
+                      <button
+                        onClick={() =>
+                          action("kick", { username: member.username })
+                        }
+                        disabled={busy}
+                        className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50 hover:cursor-pointer"
+                      >
+                        Kick
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

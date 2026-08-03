@@ -712,9 +712,18 @@ app.post("/api/posts", async (req, res) => {
           .sort({ createdAt: -1 })
           .limit(50);
 
+        const commentCounts = await Comment.aggregate([
+          { $match: { post: { $in: posts.map((p) => p._id) } } },
+          { $group: { _id: "$post", n: { $sum: 1 } } },
+        ]);
+        const commentCountMap = new Map(
+          commentCounts.map((c) => [c._id.toString(), c.n]),
+        );
+
         const memberSet = new Set(memberGroupIds.map((id) => id.toString()));
         const shapeSearch = (p) => {
           const obj = shape(p);
+          obj.commentCount = commentCountMap.get(p._id.toString()) || 0;
           const g = obj.group;
           if (g?.isPrivate && !memberSet.has(g._id?.toString())) {
             obj.locked = true;
@@ -1027,6 +1036,7 @@ app.post("/api/chat", async (req, res) => {
             participants: [caller._id, other._id],
           });
         }
+        await convo.populate("participants", "username firstName lastName");
         return res.json({ conversation: convo });
       }
 
@@ -1039,7 +1049,7 @@ app.post("/api/chat", async (req, res) => {
       }
 
       case "messages": {
-        convo = await Conversation.findById(data.conversationId);
+        const convo = await Conversation.findById(data.conversationId);
         if (!convo || !convo.participants.some((id) => id.equals(caller._id))) {
           return res.status(403).json({ message: "not allowed" });
         }

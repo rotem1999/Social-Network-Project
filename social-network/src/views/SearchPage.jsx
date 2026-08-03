@@ -5,7 +5,7 @@ import axios from "axios";
 import SearchFilter from "@/components/SearchFilter";
 import { POSTS_URL, GROUPS_URL } from "@/lib/Api";
 import GroupIcon from "@/components/GroupIcon";
-import { LockIcon } from "@/components/Icons";
+import { LockIcon, UpArrow, CommentIcon } from "@/components/Icons";
 
 const slugify = (s) =>
   (s || "")
@@ -65,7 +65,7 @@ const SearchPage = () => {
     : [];
 
   return (
-    <div className="mx-auto max-w-2xl space-y-3">
+    <div className="mx-auto max-w-2xl space-y-3 min-w-150">
       <div className="flex items-center gap-2 border-b pb-2">
         <button
           onClick={() => setFilterOpen((o) => !o)}
@@ -120,28 +120,42 @@ const SearchPage = () => {
               <Link
                 key={post._id}
                 to={postUrl(post)}
-                className="flex items-center gap-3 rounded-xl border p-3 transition hover:bg-gray-50"
+                className="flex max-h-[150px] min-h-[96px] w-full flex-col gap-1 overflow-hidden rounded-xl border p-3 transition hover:bg-gray-50"
               >
-                {post.media &&
-                  (post.mediaType === "video" ? (
-                    <video
-                      src={post.media}
-                      muted
-                      className="h-16 w-16 shrink-0 rounded object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={post.media}
-                      alt=""
-                      className="h-16 w-16 shrink-0 rounded object-cover"
-                    />
-                  ))}
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{post.title}</p>
-                  <p className="text-xs text-gray-500">
-                    r/{post.group?.name} • u/{post.author?.username} •{" "}
-                    {post.score} pts
-                  </p>
+                <p className="truncate font-medium">{post.title}</p>
+                <p className="text-xs text-gray-500">
+                  r/{post.group?.name} • u/{post.author?.username}
+                </p>
+                <div className="flex min-h-0 flex-1 gap-3">
+                  {post.content && (
+                    <p className="line-clamp-3 min-w-0 flex-1 text-sm text-gray-700">
+                      {post.content}
+                    </p>
+                  )}
+                  {post.media &&
+                    (post.mediaType === "video" ? (
+                      <video
+                        src={post.media}
+                        muted
+                        className="h-14 w-14 shrink-0 self-start rounded object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={post.media}
+                        alt=""
+                        className="h-14 w-14 shrink-0 self-start rounded object-cover"
+                      />
+                    ))}
+                </div>
+                <div className="mt-auto flex items-center gap-4 pt-1 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <UpArrow size={14} />
+                    {post.score} votes
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CommentIcon size={14} />
+                    {post.commentCount} comments
+                  </span>
                 </div>
               </Link>
             ),
