@@ -232,7 +232,7 @@ const GroupPage = () => {
       )}
 
       {(!group?.isPrivate || isMember) && (
-        <GroupActivityChart name={name} refreshKey={posts.length} />
+        <GroupActivityChart name={name} weeks={26} refreshKey={posts.length} />
       )}
 
       <div className="space-y-3">
