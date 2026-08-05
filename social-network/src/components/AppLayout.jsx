@@ -1,0 +1,26 @@
+"use client";
+
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+import TopBar from "./TopBar";
+import GroupsDrawer from "./GroupsDrawer";
+import BottomBar from "./BottomBar";
+
+const AppLayout = () => {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen">
+      <TopBar onMenu={() => setDrawerOpen(true)} />
+      <GroupsDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+
+      <main className="mx-auto max-w-4xl px-5 pt-16 pb-24">
+        <Outlet />
+      </main>
+
+      <BottomBar />
+    </div>
+  );
+};
+
+export default AppLayout;
