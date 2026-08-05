@@ -27,6 +27,16 @@ const SearchPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [allGroups, setAllGroups] = useState([]);
+  const [filters, setFilters] = useState({
+    title: "",
+    author: "",
+    community: "",
+  });
+  const [active, setActive] = useState({
+    title: false,
+    author: false,
+    community: false,
+  });
 
   useEffect(() => {
     axios
@@ -85,6 +95,10 @@ const SearchPage = () => {
       {filterOpen && (
         <SearchFilter
           q={q}
+          filters={filters}
+          setFilters={setFilters}
+          active={active}
+          setActive={setActive}
           onApply={(params) => {
             setFilterOpen(false);
             runSearch(params);

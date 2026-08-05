@@ -4,17 +4,14 @@ import axios from "axios";
 import { GROUPS_URL } from "@/lib/Api";
 import GroupIcon from "@/components/GroupIcon";
 
-const SearchFilter = ({ q, onApply }) => {
-  const [filters, setFilters] = useState({
-    title: "",
-    author: "",
-    community: "",
-  });
-  const [active, setActive] = useState({
-    title: false,
-    author: false,
-    community: false,
-  });
+const SearchFilter = ({
+  q,
+  filters,
+  setFilters,
+  active,
+  setActive,
+  onApply,
+}) => {
   const [allGroups, setAllGroups] = useState([]);
   const [showSuggest, setShowSuggest] = useState(false);
 
