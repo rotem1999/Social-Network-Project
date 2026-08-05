@@ -18,8 +18,50 @@ const initChatToken = (server, { Conversation, Message }) => {
     }
   });
 
+  const online = new Map();
+
   io.on("connection", (socket) => {
-    socket.join(String(socket.userId));
+    const userId = String(socket.userId);
+    socket.join(userId);
+
+    online.set(userId, (online.get(userId) || 0) + 1);
+    if (online.get(userId) === 1) {
+      io.emit("presence", { userId, online: true });
+    }
+    socket.emit("onlineUsers", [...online.keys()]);
+
+    socket.on("disconnect", () => {
+      const left = (online.get(userId) || 1) - 1;
+      if (left > 0) {
+        online.set(userId, left);
+        return;
+      }
+      online.delete(userId);
+      io.emit("presence", { userId, online: false });
+    });
+
+    socket.on("typing", async ({ conversationId, isTyping }) => {
+      try {
+        const convo = await Conversation.findById(conversationId);
+        if (
+          !convo ||
+          !convo.participants.some((id) => id.equals(socket.userId))
+        ) {
+          return;
+        }
+
+        convo.participants.forEach((id) => {
+          if (String(id) === userId) return;
+          io.to(String(id)).emit("typing", {
+            conversationId,
+            userId,
+            isTyping: !!isTyping,
+          });
+        });
+      } catch {
+        return;
+      }
+    });
 
     socket.on("sendMessage", async ({ conversationId, content }, ack) => {
       try {

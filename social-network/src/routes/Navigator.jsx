@@ -9,13 +9,13 @@ import { AuthProvider } from "@/context/AuthContext";
 import Feed from "@/views/Feed";
 import AppLayout from "@/components/AppLayout";
 import Account from "@/views/Account";
-import Inbox from "@/views/Inbox";
 import CreateGroup from "@/views/CreateGroup";
 import CreatePost from "@/views/CreatePost";
 import PostPage from "@/views/PostPage";
 import EditPost from "@/views/EditPost";
 import SearchPage from "@/views/SearchPage";
 import GroupPage from "@/views/GroupPage";
+import Chat from "@/views/Chat";
 
 function Navigator() {
   const [mounted, setMounted] = useState(false);
@@ -40,7 +40,7 @@ function Navigator() {
           <Route element={<RequireAuth />}>
             <Route element={<AppLayout />}>
               <Route path="/" element={<Feed />} />
-              <Route path="/inbox" element={<Inbox />} />
+              <Route path="/inbox" element={<Chat />} />
               <Route path="/account" element={<Account />} />
               <Route path="/create-group" element={<CreateGroup />} />
               <Route path="/create-post" element={<CreatePost />} />

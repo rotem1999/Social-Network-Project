@@ -166,6 +166,28 @@ app.post("/api/users", async (req, res) => {
         });
       }
 
+      case "search": {
+        const caller = await checkIfLoggedIn(req, res);
+        if (!caller) {
+          return;
+        }
+
+        const term = (data.term || "").trim();
+        if (!term) {
+          return res.json({ message: "Users fetched", users: [] });
+        }
+
+        const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const users = await User.find({
+          username: { $regex: "^" + safeTerm, $options: "i" },
+          _id: { $ne: caller._id },
+        })
+          .select("username")
+          .limit(8);
+
+        return res.json({ message: "Users fetched", users });
+      }
+
       case "update": {
         const caller = await checkIfLoggedIn(req, res);
         if (!caller) {
@@ -1040,12 +1062,194 @@ app.post("/api/chat", async (req, res) => {
         return res.json({ conversation: convo });
       }
 
+      case "startGroup": {
+        if (!data.name?.trim()) {
+          return res.status(400).json({ message: "group name is required" });
+        }
+        if (!Array.isArray(data.usernames) || data.usernames.length === 0) {
+          return res.status(400).json({ message: "pick at least one member" });
+        }
+
+        const others = await User.find({ username: { $in: data.usernames } });
+        if (others.length !== data.usernames.length) {
+          return res.status(404).json({ message: "some users were not found" });
+        }
+
+        const participantIds = [caller._id];
+        others.forEach((one) => {
+          if (!one._id.equals(caller._id)) participantIds.push(one._id);
+        });
+
+        const groupConvo = await Conversation.create({
+          participants: participantIds,
+          isGroup: true,
+          name: data.name.trim(),
+          admin: caller._id,
+        });
+        await groupConvo.populate(
+          "participants",
+          "username firstName lastName",
+        );
+        return res.json({ conversation: groupConvo });
+      }
+
+      case "addMember": {
+        if (!data.conversationId || !data.username) {
+          return res
+            .status(400)
+            .json({ message: "conversationId and username are required" });
+        }
+
+        const groupConvo = await Conversation.findById(data.conversationId);
+        if (!groupConvo || !groupConvo.isGroup) {
+          return res.status(404).json({ message: "group chat not found" });
+        }
+        if (!groupConvo.admin || !groupConvo.admin.equals(caller._id)) {
+          return res
+            .status(403)
+            .json({ message: "only the admin can add members" });
+        }
+
+        const target = await User.findOne({ username: data.username });
+        if (!target) return res.status(404).json({ message: "user not found" });
+
+        if (groupConvo.participants.some((id) => id.equals(target._id))) {
+          return res.status(400).json({ message: "user is already a member" });
+        }
+
+        groupConvo.participants.push(target._id);
+        await groupConvo.save();
+        return res.json({ message: "member added" });
+      }
+
+      case "pin": {
+        const target = await Conversation.findById(data.conversationId);
+        if (
+          !target ||
+          !target.participants.some((id) => id.equals(caller._id))
+        ) {
+          return res.status(403).json({ message: "not allowed" });
+        }
+
+        if (target.pinnedBy.some((id) => id.equals(caller._id))) {
+          return res.json({ message: "already pinned" });
+        }
+
+        const pinnedCount = await Conversation.countDocuments({
+          participants: caller._id,
+          pinnedBy: caller._id,
+        });
+        if (pinnedCount >= 3) {
+          return res
+            .status(400)
+            .json({ message: "you can pin up to 3 chats only" });
+        }
+
+        target.pinnedBy.push(caller._id);
+        await target.save();
+        return res.json({ message: "chat pinned" });
+      }
+
+      case "unpin": {
+        const target = await Conversation.findById(data.conversationId);
+        if (
+          !target ||
+          !target.participants.some((id) => id.equals(caller._id))
+        ) {
+          return res.status(403).json({ message: "not allowed" });
+        }
+
+        target.pinnedBy = target.pinnedBy.filter(
+          (id) => !id.equals(caller._id),
+        );
+        await target.save();
+        return res.json({ message: "chat unpinned" });
+      }
+
+      case "leave": {
+        const target = await Conversation.findById(data.conversationId);
+        if (
+          !target ||
+          !target.participants.some((id) => id.equals(caller._id))
+        ) {
+          return res.status(403).json({ message: "not allowed" });
+        }
+        if (!target.isGroup) {
+          return res
+            .status(400)
+            .json({ message: "you can only leave group chats" });
+        }
+        if (target.admin?.equals(caller._id)) {
+          return res
+            .status(400)
+            .json({ message: "the admin must delete the group instead" });
+        }
+
+        target.participants = target.participants.filter(
+          (id) => !id.equals(caller._id),
+        );
+        target.pinnedBy = target.pinnedBy.filter(
+          (id) => !id.equals(caller._id),
+        );
+        await target.save();
+        return res.json({ message: "left the group" });
+      }
+
+      case "delete": {
+        const target = await Conversation.findById(data.conversationId);
+        if (
+          !target ||
+          !target.participants.some((id) => id.equals(caller._id))
+        ) {
+          return res.status(403).json({ message: "not allowed" });
+        }
+        if (target.isGroup && !target.admin?.equals(caller._id)) {
+          return res
+            .status(403)
+            .json({ message: "only the admin can delete this group chat" });
+        }
+
+        await Message.deleteMany({ conversation: target._id });
+        await target.deleteOne();
+        return res.json({ message: "chat deleted" });
+      }
+
       case "conversations": {
         const convoList = await Conversation.find({ participants: caller._id })
           .populate("participants", "username firstName lastName")
           .sort({ lastMessageAt: -1 });
 
-        return res.json({ conversations: convoList });
+        const previews = await Message.aggregate([
+          { $match: { conversation: { $in: convoList.map((c) => c._id) } } },
+          { $sort: { createdAt: -1 } },
+          {
+            $group: {
+              _id: "$conversation",
+              content: { $first: "$content" },
+              sender: { $first: "$sender" },
+              createdAt: { $first: "$createdAt" },
+            },
+          },
+        ]);
+        const previewMap = new Map(
+          previews.map((one) => [one._id.toString(), one]),
+        );
+
+        const shaped = convoList.map((convo) => {
+          const obj = convo.toObject();
+          obj.pinned = convo.pinnedBy.some((id) => id.equals(caller._id));
+          obj.isAdmin = !!convo.admin?.equals(caller._id);
+          obj.lastMessage = previewMap.get(convo._id.toString()) || null;
+          delete obj.pinnedBy;
+          return obj;
+        });
+
+        shaped.sort((a, b) => {
+          if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+          return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
+        });
+
+        return res.json({ conversations: shaped });
       }
 
       case "messages": {
@@ -1059,6 +1263,184 @@ app.post("/api/chat", async (req, res) => {
           .sort({ createdAt: -1 })
           .limit(100);
         return res.json({ messages });
+      }
+
+      default: {
+        return res.status(400).json({ message: "unknown command" });
+      }
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Server Error" });
+  }
+});
+
+const dayKey = (date) => date.toISOString().slice(0, 10);
+
+const startOfDayUTC = (date) => {
+  const copy = new Date(date);
+  copy.setUTCHours(0, 0, 0, 0);
+  return copy;
+};
+
+const startOfWeekUTC = (date) => {
+  const copy = startOfDayUTC(date);
+  copy.setUTCDate(copy.getUTCDate() - copy.getUTCDay());
+  return copy;
+};
+
+const countByDay = (rows) => {
+  const counts = new Map();
+  rows.forEach((row) => counts.set(row._id, (counts.get(row._id) || 0) + row.n));
+  return counts;
+};
+
+app.post("/api/stats", async (req, res) => {
+  const { command, data } = req.body;
+  const caller = await checkIfLoggedIn(req, res);
+  if (!caller) return;
+
+  try {
+    switch (command) {
+      case "contributions": {
+        const target = data.username
+          ? await User.findOne({ username: data.username })
+          : caller;
+        if (!target) {
+          return res.status(404).json({ message: "user not found" });
+        }
+
+        const weeks = Math.min(Number(data.weeks) || 53, 53);
+        const today = startOfDayUTC(new Date());
+        const since = startOfWeekUTC(today);
+        since.setUTCDate(since.getUTCDate() - (weeks - 1) * 7);
+
+        const memberGroups = await Group.find({ members: caller._id }).select(
+          "_id",
+        );
+        const visibleGroups = await Group.find({
+          $or: [
+            { isPrivate: false },
+            { _id: { $in: memberGroups.map((one) => one._id) } },
+          ],
+        }).select("_id");
+        const visibleGroupIds = visibleGroups.map((one) => one._id);
+
+        const postDays = await Post.aggregate([
+          {
+            $match: {
+              author: target._id,
+              group: { $in: visibleGroupIds },
+              createdAt: { $gte: since },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+              },
+              n: { $sum: 1 },
+            },
+          },
+        ]);
+
+        const commentDays = await Comment.aggregate([
+          { $match: { author: target._id, createdAt: { $gte: since } } },
+          {
+            $lookup: {
+              from: "posts",
+              localField: "post",
+              foreignField: "_id",
+              as: "parentPost",
+            },
+          },
+          { $unwind: "$parentPost" },
+          { $match: { "parentPost.group": { $in: visibleGroupIds } } },
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+              },
+              n: { $sum: 1 },
+            },
+          },
+        ]);
+
+        const counts = countByDay([...postDays, ...commentDays]);
+
+        const days = [];
+        for (
+          const cursor = new Date(since);
+          cursor <= today;
+          cursor.setUTCDate(cursor.getUTCDate() + 1)
+        ) {
+          const key = dayKey(cursor);
+          days.push({ date: key, count: counts.get(key) || 0 });
+        }
+
+        return res.json({
+          message: "Contributions fetched",
+          username: target.username,
+          total: days.reduce((sum, one) => sum + one.count, 0),
+          days,
+        });
+      }
+
+      case "groupActivity": {
+        if (!data.name) {
+          return res.status(400).json({ message: "name is a required field" });
+        }
+
+        const group = await Group.findOne({ name: data.name });
+        if (!group) {
+          return res.status(404).json({ message: "group not found" });
+        }
+        if (
+          group.isPrivate &&
+          !group.members.some((id) => id.equals(caller._id))
+        ) {
+          return res.status(403).json({ message: "group is private" });
+        }
+
+        const weeks = Math.min(Number(data.weeks) || 12, 52);
+        const firstWeek = startOfWeekUTC(new Date());
+        firstWeek.setUTCDate(firstWeek.getUTCDate() - (weeks - 1) * 7);
+
+        const postDays = await Post.aggregate([
+          { $match: { group: group._id, createdAt: { $gte: firstWeek } } },
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+              },
+              n: { $sum: 1 },
+            },
+          },
+        ]);
+
+        const buckets = [];
+        for (let index = 0; index < weeks; index += 1) {
+          const weekStart = new Date(firstWeek);
+          weekStart.setUTCDate(weekStart.getUTCDate() + index * 7);
+          buckets.push({ weekStart: dayKey(weekStart), count: 0 });
+        }
+
+        const dayMs = 24 * 60 * 60 * 1000;
+        countByDay(postDays).forEach((count, key) => {
+          const offset = Math.floor(
+            (new Date(key + "T00:00:00.000Z") - firstWeek) / dayMs / 7,
+          );
+          if (offset >= 0 && offset < buckets.length) {
+            buckets[offset].count += count;
+          }
+        });
+
+        return res.json({
+          message: "Group activity fetched",
+          group: group.name,
+          total: buckets.reduce((sum, one) => sum + one.count, 0),
+          weeks: buckets,
+        });
       }
 
       default: {
