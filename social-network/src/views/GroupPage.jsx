@@ -151,45 +151,46 @@ const GroupPage = () => {
               </button>
             </div>
           </div>
-
-          <div className="space-y-2 border-t pt-2">
-            <p className="text-xs text-gray-500">Pending join requests</p>
-            {group.pendingRequests?.length === 0 ? (
-              <p className="text-sm text-gray-400">No pending requests</p>
-            ) : (
-              group.pendingRequests.map((req) => {
-                const rid = idOf(req);
-                return (
-                  <div
-                    key={rid}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span>u/{req.username || rid}</span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          action("approve", { username: req.username })
-                        }
-                        disabled={busy}
-                        className="rounded-full border border-green-300 px-3 py-1 text-xs text-green-700 transition hover:bg-green-50 disabled:opacity-50 hover:cursor-pointer"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() =>
-                          action("reject", { username: req.username })
-                        }
-                        disabled={busy}
-                        className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600 transition hover:bg-red-50 disabled:opacity-50 hover:cursor-pointer"
-                      >
-                        Reject
-                      </button>
+          {group.isPrivate && (
+            <div className="space-y-2 border-t pt-2">
+              <p className="text-xs text-gray-500">Pending join requests</p>
+              {group.pendingRequests?.length === 0 ? (
+                <p className="text-sm text-gray-400">No pending requests</p>
+              ) : (
+                group.pendingRequests.map((req) => {
+                  const rid = idOf(req);
+                  return (
+                    <div
+                      key={rid}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span>u/{req.username || rid}</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            action("approve", { username: req.username })
+                          }
+                          disabled={busy}
+                          className="rounded-full border border-green-300 px-3 py-1 text-xs text-green-700 transition hover:bg-green-50 disabled:opacity-50 hover:cursor-pointer"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() =>
+                            action("reject", { username: req.username })
+                          }
+                          disabled={busy}
+                          className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600 transition hover:bg-red-50 disabled:opacity-50 hover:cursor-pointer"
+                        >
+                          Reject
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                  );
+                })
+              )}
+            </div>
+          )}
 
           {membersOpen && (
             <div className="space-y-1 border-t pt-2">
