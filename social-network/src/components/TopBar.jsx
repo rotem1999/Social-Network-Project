@@ -63,13 +63,16 @@ const TopBar = ({ onMenu }) => {
         </button>
         <span
           onClick={() => navigate("/")}
-          className="text-lg font-bold text-orange-600 [text-shadow:1px_1px_2px_rgba(0,0,0,0.2)] hover:cursor-pointer"
+          className="font-display text-lg text-orange-600 [text-shadow:1px_1px_2px_rgba(0,0,0,0.2)] hover:cursor-pointer"
         >
           REDDIT CLONE
         </span>
       </div>
 
-      <form onSubmit={handleSearch} className="relative ml-auto flex w-40 sm:w-64">
+      <form
+        onSubmit={handleSearch}
+        className="relative ml-auto flex w-40 sm:w-64"
+      >
         <input
           className="w-full max-w-md rounded-full border bg-gray-50 hover:bg-gray-100 px-4 py-1.5 text-center text-sm transition focus:bg-white focus:text-left"
           placeholder="Search or r/community"

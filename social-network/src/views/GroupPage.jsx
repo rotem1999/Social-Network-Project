@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { ClockIcon, LockIcon } from "@/components/Icons";
+import GroupActivityChart from "@/components/GroupActivityChart";
 
 const GroupPage = () => {
   const { name } = useParams();
@@ -193,38 +194,44 @@ const GroupPage = () => {
           {membersOpen && (
             <div className="space-y-1 border-t pt-2">
               <p className="text-xs text-gray-500">Members</p>
-              {group.members?.map((member) => {
-                const mid = idOf(member);
-                return (
-                  <div
-                    key={mid}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span>
-                      u/{member.username || mid}
-                      {adminIds.has(mid) && (
-                        <span className="ml-1 text-xs text-gray-400">
-                          (admin)
-                        </span>
+              <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+                {group.members?.map((member) => {
+                  const mid = idOf(member);
+                  return (
+                    <div
+                      key={mid}
+                      className="flex break-inside-avoid items-center justify-between py-0.5 text-sm"
+                    >
+                      <span>
+                        u/{member.username || mid}
+                        {adminIds.has(mid) && (
+                          <span className="ml-1 text-xs text-gray-400">
+                            (admin)
+                          </span>
+                        )}
+                      </span>
+                      {!adminIds.has(mid) && mid !== uid && (
+                        <button
+                          onClick={() =>
+                            action("kick", { username: member.username })
+                          }
+                          disabled={busy}
+                          className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50 hover:cursor-pointer"
+                        >
+                          Kick
+                        </button>
                       )}
-                    </span>
-                    {!adminIds.has(mid) && mid !== uid && (
-                      <button
-                        onClick={() =>
-                          action("kick", { username: member.username })
-                        }
-                        disabled={busy}
-                        className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50 hover:cursor-pointer"
-                      >
-                        Kick
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
+      )}
+
+      {(!group?.isPrivate || isMember) && (
+        <GroupActivityChart name={name} refreshKey={posts.length} />
       )}
 
       <div className="space-y-3">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import ContributionGraph from "@/components/ContributionGraph";
 
 const Account = () => {
   const { user, logout } = useAuth();
@@ -25,6 +26,8 @@ const Account = () => {
           <dd>{user.email}</dd>
         </div>
       </dl>
+
+      <ContributionGraph />
 
       <button
         onClick={logout}

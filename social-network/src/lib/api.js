@@ -5,4 +5,5 @@ export const GROUPS_URL = API_URL + "/api/groups";
 export const POSTS_URL = API_URL + "/api/posts";
 export const COMMENTS_URL = API_URL + "/api/comments";
 export const CHAT_URL = API_URL + "/api/chat";
+export const STATS_URL = API_URL + "/api/stats";
 export const SOCKET_URL = API_URL;
