@@ -63,6 +63,7 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    if (!confirm("Are you sure you want to log out ?")) return;
     localStorage.removeItem(TOKEN_KEY);
     delete axios.defaults.headers.common.Authorization;
     setToken(null);
@@ -78,6 +79,7 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       user,
+      setUser,
       token,
       loading,
       login,

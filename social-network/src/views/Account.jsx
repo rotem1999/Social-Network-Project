@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import ContributionGraph from "@/components/ContributionGraph";
+import AccountEditor from "@/components/AccountEditor";
 
 const Account = () => {
   const { user, logout } = useAuth();
@@ -10,28 +11,13 @@ const Account = () => {
   return (
     <section className="space-y-4">
       <h1 className="text-2xl font-bold">Account</h1>
-      <dl className="rounded-2xl border p-4 text-sm">
-        <div className="flex justify-between py-1">
-          <dt className="text-gray-500">Name:</dt>
-          <dd>
-            {user.firstName} {user.lastName}
-          </dd>
-        </div>
-        <div className="flex justify-between py-1">
-          <dt className="text-gray-500">Username</dt>
-          <dd>{user.username}</dd>
-        </div>
-        <div className="flex justify-between py-1">
-          <dt className="text-gray-500">Email:</dt>
-          <dd>{user.email}</dd>
-        </div>
-      </dl>
+      <AccountEditor />
 
       <ContributionGraph />
 
       <button
         onClick={logout}
-        className="rounded-full border px-4 py-2 text-sm transition hover: bg-gray-100"
+        className="rounded-full border px-4 py-2 text-sm transition hover: bg-gray-100 hover:cursor-pointer"
       >
         Log out
       </button>

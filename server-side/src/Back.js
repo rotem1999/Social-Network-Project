@@ -116,7 +116,7 @@ app.post("/api/users", async (req, res) => {
           },
         });
 
-      case "insert":
+      case "insert": {
         if (
           !data.firstName ||
           !data.lastName ||
@@ -130,16 +130,64 @@ app.post("/api/users", async (req, res) => {
           });
         }
 
-        const exists = await User.findOne({ username: data.username });
+        const firstName = String(data.firstName).trim();
+        const lastName = String(data.lastName).trim();
+        const newEmail = String(data.email).trim();
+        const username = String(data.username).trim();
+
+        if (firstName.length < 1 || firstName.length > 40) {
+          return res
+            .status(400)
+            .json({ message: "first name must be 1-40 characters" });
+        }
+
+        if (lastName.length < 1 || lastName.length > 40) {
+          return res
+            .status(400)
+            .json({ message: "last name must be 1-40 characters" });
+        }
+
+        if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) {
+          return res.status(400).json({
+            message:
+              "username must be 3-20 characters, letters numbers and underscores only",
+          });
+        }
+
+        if (
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail) ||
+          newEmail.length > 254
+        ) {
+          return res.status(400).json({ message: "invalid email address" });
+        }
+
+        if (typeof data.password !== "string" || data.password.length < 6) {
+          return res
+            .status(400)
+            .json({ message: "password must be at least 6 characters" });
+        }
+
+        const safeUsername = username.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const exists = await User.findOne({
+          username: { $regex: "^" + safeUsername + "$", $options: "i" },
+        });
         if (exists) {
           return res.status(409).json({ message: "Username Taken" });
         }
 
+        const safeNewEmail = newEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const emailExists = await User.findOne({
+          email: { $regex: "^" + safeNewEmail + "$", $options: "i" },
+        });
+        if (emailExists) {
+          return res.status(409).json({ message: "email already taken" });
+        }
+
         const newUser = new User({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          username: data.username,
+          firstName,
+          lastName,
+          email: newEmail,
+          username,
           password: await bcrypt.hash(data.password, saltRounds),
         });
         await newUser.save();
@@ -153,6 +201,7 @@ app.post("/api/users", async (req, res) => {
             username: newUser.username,
           },
         });
+      }
 
       case "select": {
         const caller = await checkIfLoggedIn(req, res);
@@ -194,20 +243,89 @@ app.post("/api/users", async (req, res) => {
           return;
         }
 
-        const updates = {
-          firstName: data.firstName || caller.firstName,
-          lastName: data.lastName || caller.lastName,
-          email: data.email || caller.email,
-          password: data.password
-            ? await bcrypt.hash(data.password, saltRounds)
-            : caller.password,
-        };
+        const nameOk = (value) =>
+          typeof value === "string" &&
+          value.trim().length >= 1 &&
+          value.trim().length <= 40;
 
-        if (updates.email !== caller.email) {
-          const emailTaken = await User.findOne({ email: updates.email });
-          if (emailTaken) {
-            return res.status(409).json({ message: "email already taken" });
+        const email =
+          data.email === undefined ? undefined : String(data.email).trim();
+        if (
+          email !== undefined &&
+          (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)
+        ) {
+          return res.status(400).json({ message: "invalid email address" });
+        }
+
+        const wantsEmail =
+          email !== undefined &&
+          email.toLowerCase() !== caller.email.toLowerCase();
+        const wantsPassword =
+          data.password !== undefined && data.password !== "";
+
+        if (wantsEmail || wantsPassword) {
+          if (!data.currentPassword) {
+            return res.status(400).json({
+              message: "current password is required to change email or password",
+            });
           }
+
+          const currentOk = await bcrypt.compare(
+            data.currentPassword,
+            caller.password,
+          );
+          if (!currentOk) {
+            return res
+              .status(401)
+              .json({ message: "current password is incorrect" });
+          }
+        }
+
+        const updates = {};
+
+        if (data.firstName !== undefined) {
+          if (!nameOk(data.firstName)) {
+            return res
+              .status(400)
+              .json({ message: "first name must be 1-40 characters" });
+          }
+          updates.firstName = data.firstName.trim();
+        }
+
+        if (data.lastName !== undefined) {
+          if (!nameOk(data.lastName)) {
+            return res
+              .status(400)
+              .json({ message: "last name must be 1-40 characters" });
+          }
+          updates.lastName = data.lastName.trim();
+        }
+
+        if (email !== undefined) {
+          if (wantsEmail) {
+            const safeEmail = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const emailTaken = await User.findOne({
+              email: { $regex: "^" + safeEmail + "$", $options: "i" },
+              _id: { $ne: caller._id },
+            });
+            if (emailTaken) {
+              return res.status(409).json({ message: "email already taken" });
+            }
+          }
+          updates.email = email;
+        }
+
+        if (wantsPassword) {
+          if (typeof data.password !== "string" || data.password.length < 6) {
+            return res
+              .status(400)
+              .json({ message: "password must be at least 6 characters" });
+          }
+          updates.password = await bcrypt.hash(data.password, saltRounds);
+        }
+
+        if (Object.keys(updates).length === 0) {
+          return res.status(400).json({ message: "nothing to update" });
         }
 
         const updateUser = await User.findByIdAndUpdate(caller._id, updates, {
